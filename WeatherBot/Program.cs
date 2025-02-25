@@ -1,4 +1,10 @@
 
+using System.Xml.Xsl;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using WeatherBot.Services;
+
 namespace WeatherBot
 {
     public class Program
@@ -14,7 +20,14 @@ namespace WeatherBot
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            var botToken = builder.Configuration["TelegramBotToken"];
+            builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
+
             var app = builder.Build();
+
+            Bot bot = new Bot(botToken);
+            bot.StartReceiving();
+
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -30,7 +43,11 @@ namespace WeatherBot
 
             app.MapControllers();
 
+
             app.Run();
         }
+
     }
+
+
 }
