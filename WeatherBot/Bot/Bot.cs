@@ -5,16 +5,20 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using WeatherBot.Dto;
+using WeatherBot.Interfaces;
 
 namespace WeatherBot.Services
 {
     public class Bot
     {
         private readonly ITelegramBotClient _botClient;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public Bot(string token)
+        public Bot(string token, IServiceScopeFactory scopeFactory)
         {
             _botClient = new TelegramBotClient(token);
+            _scopeFactory = scopeFactory;
         }
 
         public async void StartReceiving()
@@ -39,7 +43,7 @@ namespace WeatherBot.Services
             await Task.Delay(-1);
         }
 
-        private static async Task UpdateHandler(ITelegramBotClient botClient, Update update,
+        private async Task UpdateHandler(ITelegramBotClient botClient, Update update,
             CancellationToken cancellationToken)
         {
             try
@@ -54,6 +58,18 @@ namespace WeatherBot.Services
 
                             Console.WriteLine($"{user.FirstName} ({user.Id}) написал сообщение: {message.Text}");
 
+                            UserDto userDto = new UserDto
+                            {
+                                TelegramId = user.Id,
+                                TelegramName = user.Username
+                            };
+
+                            await _scopeFactory
+                                .CreateScope()
+                                .ServiceProvider
+                                .GetRequiredService<IBotService>()
+                                .AddNewUser(userDto);
+
                             var chat = message.Chat;
 
                             switch (message.Type)
@@ -64,26 +80,14 @@ namespace WeatherBot.Services
                                         {
                                             await botClient.SendMessage(
                                                 chat.Id,
-                                                "Список комманд:\n" +
-                                                "Просмотр погоды по введённому городу: /weather\n");
+                                                "Привіт! Вас вітає помічник для перегляду погоди.\n" +
+                                                "Для навігації використовуйте меню. Воно знаходиться знизу👇");
 
-                                            var replyKeyboard = new ReplyKeyboardMarkup(
-                                                new List<KeyboardButton[]>()
-                                                {
-                                                    new KeyboardButton[]
-                                                    {
-                                                        new KeyboardButton("Weather")
-                                                    },
-                                                })
 
+                                            await botClient.SetMyCommands(new[]
                                             {
-                                                ResizeKeyboard = true,
-                                            };
-
-                                            await botClient.SendMessage(
-                                                chat.Id,
-                                                "Можно так же использовать открывающуюся кнопку внизу экрана",
-                                                replyMarkup: replyKeyboard);
+                                                new BotCommand { Command = "weather", Description = "Погода за містом" },
+                                            });
 
                                             return;
                                         }
@@ -96,7 +100,7 @@ namespace WeatherBot.Services
                                         {
                                             await botClient.SendMessage(
                                             chat.Id,
-                                            "Указанной команды не существует!");
+                                            "Заданої команди не існує!");
                                         }
 
                                         return;
@@ -115,7 +119,7 @@ namespace WeatherBot.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine(ex.Message);
             }
         }
 
