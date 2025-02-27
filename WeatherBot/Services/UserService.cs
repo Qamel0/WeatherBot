@@ -23,9 +23,8 @@ namespace WeatherBot.Services
             return await _userRepository.AddUser(user);
         }
 
-        public async Task<UserDto> GetUserWithRequests(long id)
-        {
-            return await _userRepository.GetUserWithRequests(id);
-        }
+        public async Task<IEnumerable<UserDto>> GetAllUsers() => await _userRepository.GetAllUsers();
+
+        public async Task<UserDto?> GetUserWithRequests(long id) => await _userRepository.GetUserWithRequests(id);
     }
 }

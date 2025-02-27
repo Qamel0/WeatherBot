@@ -4,6 +4,6 @@ namespace WeatherBot.Interfaces
 {
     public interface IOpenWeatherService
     {
-        Task<WeatherResponse?> GetWeather(string city);
+        Task<WeatherResponseModel?> GetWeather(string city);
     }
 }

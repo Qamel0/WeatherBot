@@ -16,7 +16,7 @@ namespace WeatherBot.Services
             _httpClient = httpClient;
         }
 
-        public async Task<WeatherResponse?> GetWeather(string city)
+        public async Task<WeatherResponseModel?> GetWeather(string city)
         {
             string url = $"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={_apiKey}&units=metric";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -27,7 +27,7 @@ namespace WeatherBot.Services
 
                 JObject json = JObject.Parse(jsonResponse);
 
-                return new WeatherResponse
+                return new WeatherResponseModel
                 {
                     City = json["name"]?.ToString() ?? "Unknown",
                     Temperature = json["main"]?["temp"]?.ToObject<float>() ?? 0,

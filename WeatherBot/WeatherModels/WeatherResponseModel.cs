@@ -1,6 +1,6 @@
 ﻿namespace WeatherBot.WeatherModels
 {
-    public class WeatherResponse
+    public class WeatherResponseModel
     {
         public string City { get; set; } = null!;
         public float Temperature { get; set; }

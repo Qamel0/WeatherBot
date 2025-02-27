@@ -31,12 +31,18 @@ namespace WeatherBot.Repository
             return await _connection.QueryFirstOrDefaultAsync<UserDto>(sql, new { TelegramId = userId });
         }
 
+        public async Task<IEnumerable<UserDto>> GetAllUsers()
+        {
+            string sql = "SELECT TelegramId, TelegramName, CreatedAt FROM Users";
+            return await _connection.QueryAsync<UserDto>(sql);
+        }
+
         public async Task<UserDto?> GetUserWithRequests(long userId)
         {
             string sql = @"SELECT u.TelegramId, u.TelegramName, u.CreatedAt,
                            r.Id, r.UserId, r.RequestedCity, r.RequestTime
                            FROM Users u
-                           LEFT JOIN RequestHistory r ON u.TelegramId = r.UserId
+                           LEFT JOIN WeatherHistory r ON u.TelegramId = r.UserId
                            WHERE u.TelegramId = @TelegramId";
 
             var userDictionary = new Dictionary<long, UserDto>();
@@ -52,7 +58,7 @@ namespace WeatherBot.Repository
                             TelegramId = user.TelegramId,
                             TelegramName = user.TelegramName,
                             CreatedAt = user.CreatedAt,
-                            Requests = user.Requests
+                            Requests = new List<RequestDto>()
                         };
                         userDictionary.Add(user.TelegramId, userDto);
                     }

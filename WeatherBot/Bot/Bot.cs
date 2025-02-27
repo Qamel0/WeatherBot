@@ -7,6 +7,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using WeatherBot.Dto;
 using WeatherBot.Interfaces;
+using WeatherBot.Repository;
 using WeatherBot.WeatherModels;
 
 namespace WeatherBot.Services
@@ -105,7 +106,36 @@ namespace WeatherBot.Services
             return Task.CompletedTask;
         }
 
-        private async Task<WeatherResponse?> GetWeatherFromApi(string city)
+        public async Task<bool> SendWeatherToAllUsers(WeatherResponseModel weather, string ownCityName = "Unknown")
+        {
+            if (weather == null) return false;
+
+            using var scope = _scopeFactory.CreateScope();
+            var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
+
+            IEnumerable<UserDto> users = await userService.GetAllUsers();
+            string city = ownCityName == "Unknown" ? weather.City : ownCityName;
+
+            foreach (UserDto user in users)
+            {
+                try
+                {
+                    await _botClient.SendMessage(
+                        chatId: user.TelegramId,
+                        $"Погода у місті {city}\n" +
+                        $"Температура: {(int)weather.Temperature}°\n" +
+                        $"Пасмурність: {weather.Cloudiness}%\n" +
+                        $"Вологість: {weather.Humidity}%");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to send message to user {user.TelegramId}: {ex.Message}");
+                }
+            }
+
+            return true;
+        }
+        private async Task<WeatherResponseModel?> GetWeatherFromApi(string city)
         {
             using var scope = _scopeFactory.CreateScope();
             var weatherService = scope.ServiceProvider.GetRequiredService<IOpenWeatherService>();
@@ -173,7 +203,7 @@ namespace WeatherBot.Services
                             {
                                 string city = text.Substring(9).Trim();
 
-                                WeatherResponse? weather = await GetWeatherFromApi(city);
+                                WeatherResponseModel? weather = await GetWeatherFromApi(city);
 
                                 if (weather == null)
                                 {
@@ -210,7 +240,7 @@ namespace WeatherBot.Services
                     {
                         string city = message.Text;
 
-                        WeatherResponse? weather = await GetWeatherFromApi(city);
+                        WeatherResponseModel? weather = await GetWeatherFromApi(city);
 
                         if (weather != null)
                         {

@@ -5,6 +5,7 @@ namespace WeatherBot.Interfaces
     public interface IUserService
     {
         Task<bool> AddNewUser(long id, string? name);
-        Task<UserDto> GetUserWithRequests(long id);
+        Task<IEnumerable<UserDto>> GetAllUsers();
+        Task<UserDto?> GetUserWithRequests(long id);
     }
 }
