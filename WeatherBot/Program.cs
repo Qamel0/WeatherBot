@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
 using System.Data;
 using System.Xml.Xsl;
 using Telegram.Bot;
@@ -30,27 +31,26 @@ namespace WeatherBot
                 return new SqlConnection(connectionString);
             });
 
+            
+
             builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IBotService, BotService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+
+            builder.Services.AddHttpClient<OpenWeatherService>();
+            builder.Services.AddScoped<IOpenWeatherService, OpenWeatherService>();
 
             builder.Services.AddSingleton<Bot>(provider =>
             {
-                var botToken = builder.Configuration["TelegramBotToken"];
+                var botToken = builder.Configuration["ExternalServices:TelegramBotToken"]
+                    ?? throw new ArgumentNullException("TelegramBotToken is missing in the configuration");
                 var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
                 return new Bot(botToken, scopeFactory);
             });
-
-            //var botToken = builder.Configuration["TelegramBotToken"];
-            //builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
 
             var app = builder.Build();
 
             var bot = app.Services.GetRequiredService<Bot>();
             bot.StartReceiving();
-
-            //Bot bot = new Bot(botToken);
-            //bot.StartReceiving();
-
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

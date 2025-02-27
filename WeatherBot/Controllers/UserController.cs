@@ -1,15 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WeatherBot.Interfaces;
 
 namespace WeatherBot.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/users")]
     public class UserController : ControllerBase
     {
-        [HttpGet("{userId}")]
-        public IActionResult GetUserWithRequests(int userId)
+        private readonly IUserService _userService;
+        public UserController(IUserService userService)
         {
+            _userService = userService;
+        }
+
+        [HttpGet("{userId}")]
+        public IActionResult GetUserWithRequests(long userId)
+        {
+
             return Ok($"Пользователь с id: {userId}");
         }
 
