@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Identity.Client;
 using System.Data;
+using System.Reflection;
 using System.Xml.Xsl;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -22,7 +23,12 @@ namespace WeatherBot
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+            });
 
             builder.Services.AddScoped<IDbConnection>(provider =>
             {
@@ -56,7 +62,10 @@ namespace WeatherBot
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                });
             }
 
             app.UseHttpsRedirection();
