@@ -121,6 +121,14 @@ namespace WeatherBot.Services
             return await userService.AddNewUser(id, name);
         }
 
+        private async Task<bool> AddNewRequestToDatabase(long userId, string city)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var userService = scope.ServiceProvider.GetRequiredService<IRequestService>();
+
+            return await userService.AddNewRequst(userId, city);
+        }
+
         private async Task CommandProcessing(ITelegramBotClient botClient, Message message, Chat chat, long userId)
         {
             if(!_userStates.ContainsKey(userId))
@@ -177,6 +185,7 @@ namespace WeatherBot.Services
                                 }
 
                                 ///Добавление запроса в базу данных
+                                await AddNewRequestToDatabase(userId, weather.City);
 
                                 await botClient.SendMessage(
                                 chat.Id,
@@ -201,18 +210,20 @@ namespace WeatherBot.Services
                     {
                         string city = message.Text;
 
-                        WeatherResponse? cityWeather = await GetWeatherFromApi(city);
+                        WeatherResponse? weather = await GetWeatherFromApi(city);
 
-                        if (cityWeather != null)
+                        if (weather != null)
                         {
+                            await AddNewRequestToDatabase(userId, weather.City);
+
                             await botClient.SendMessage(
                                 chat.Id,
                                 $"Погода у місті {city}\n" +
-                                $"Температура: {(int)cityWeather.Temperature}°\n" +
-                                $"Пасмурність: {cityWeather.Cloudiness}%\n" +
-                                $"Вологість: {cityWeather.Humidity}%");
+                                $"Температура: {(int)weather.Temperature}°\n" +
+                                $"Пасмурність: {weather.Cloudiness}%\n" +
+                                $"Вологість: {weather.Humidity}%");
 
-                            _userStates[userId] = "default"; // Добавлено: возврат к состоянию по умолчанию.
+                            _userStates[userId] = "default";
                             return;
                         }
 

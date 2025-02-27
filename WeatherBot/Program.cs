@@ -31,14 +31,14 @@ namespace WeatherBot
                 return new SqlConnection(connectionString);
             });
 
-            
-
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
-
-            builder.Services.AddHttpClient<OpenWeatherService>();
+            builder.Services.AddScoped<IRequestRepository, RequestRepository>();
+            builder.Services.AddScoped<IRequestService, RequestService>();
             builder.Services.AddScoped<IOpenWeatherService, OpenWeatherService>();
 
+            builder.Services.AddHttpClient<OpenWeatherService>();
+            
             builder.Services.AddSingleton<Bot>(provider =>
             {
                 var botToken = builder.Configuration["ExternalServices:TelegramBotToken"]
