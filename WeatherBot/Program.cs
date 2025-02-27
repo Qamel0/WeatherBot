@@ -42,6 +42,7 @@ namespace WeatherBot
             builder.Services.AddScoped<IRequestRepository, RequestRepository>();
             builder.Services.AddScoped<IRequestService, RequestService>();
             builder.Services.AddScoped<IOpenWeatherService, OpenWeatherService>();
+            builder.Services.AddScoped<IDataValidateService, DataValidateService>();
 
             builder.Services.AddHttpClient<OpenWeatherService>();
             

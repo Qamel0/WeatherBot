@@ -15,6 +15,7 @@ namespace WeatherBot.Controllers
     {
         private readonly IUserService _userService;
         private readonly IOpenWeatherService _openWeatherService;
+        private readonly IDataValidateService _dataValidateService;
         private readonly Bot _bot;
 
         /// <summary>
@@ -22,12 +23,14 @@ namespace WeatherBot.Controllers
         /// </summary>
         /// <param name="userService">Service for user operations.</param>
         /// <param name="openWeatherService">Service for retrieving weather data.</param>
+        /// <param name="dataValidateService">Service for validating data such as city names.</param>
         /// <param name="bot">Bot for sending messages to users.</param>
         public UserController(IUserService userService, IOpenWeatherService openWeatherService,
-            Bot bot)
+            IDataValidateService dataValidateService, Bot bot)
         {
             _userService = userService;
             _openWeatherService = openWeatherService;
+            _dataValidateService = dataValidateService;
             _bot = bot;
         }
 
@@ -44,7 +47,7 @@ namespace WeatherBot.Controllers
         public async Task<IActionResult> GetUserWithRequests(long userId)
         {
             UserDto? user = await _userService.GetUserWithRequests(userId);
-            if(user == null)
+            if (user == null)
             {
                 return NotFound($"User with id: {userId} not found");
             }
@@ -58,14 +61,21 @@ namespace WeatherBot.Controllers
         /// <param name="city">The name of the city to retrieve weather information for.</param>
         /// <returns>A success message indicating the result of the operation.</returns>
         /// <response code="200">The message was delivered successfully.</response>
+        /// <response code="400">The provided city name is invalid or cannot be validated.</response>
         /// <response code="404">The specified city name was not found.</response>
         [HttpPost("sendWeatherToAll")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> SendWeatherToAllUsers([FromQuery] string city)
         {
+            if (!await _dataValidateService.CheckCityName(city))
+            {
+                return BadRequest($"City name: {city} is invalid or could not be validated.");
+            }
+
             WeatherResponseModel? weather = await _openWeatherService.GetWeather(city);
-            if(weather == null)
+            if (weather == null)
             {
                 return NotFound($"City name: {city} not found");
             }

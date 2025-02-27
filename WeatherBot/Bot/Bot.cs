@@ -161,6 +161,9 @@ namespace WeatherBot.Services
 
         private async Task CommandProcessing(ITelegramBotClient botClient, Message message, Chat chat, long userId)
         {
+            using var scope = _scopeFactory.CreateScope();
+            var dataValidateService = scope.ServiceProvider.GetRequiredService<IDataValidateService>();
+
             if(!_userStates.ContainsKey(userId))
             {
                 _userStates[userId] = "default";
@@ -205,7 +208,7 @@ namespace WeatherBot.Services
 
                                 WeatherResponseModel? weather = await GetWeatherFromApi(city);
 
-                                if (weather == null)
+                                if (weather == null || !await dataValidateService.CheckCityName(city))
                                 {
                                     await botClient.SendMessage(
                                     chat.Id,
@@ -214,7 +217,6 @@ namespace WeatherBot.Services
                                     return;
                                 }
 
-                                ///Добавление запроса в базу данных
                                 await AddNewRequestToDatabase(userId, weather.City);
 
                                 await botClient.SendMessage(
@@ -239,6 +241,14 @@ namespace WeatherBot.Services
                 case "responseWaiting":
                     {
                         string city = message.Text;
+
+                        if(!await dataValidateService.CheckCityName(city))
+                        {
+                            await botClient.SendMessage(
+                            chat.Id,
+                            "Не вдалося знайти вказане місто. Спробуйте ще раз.");
+                            return;
+                        }
 
                         WeatherResponseModel? weather = await GetWeatherFromApi(city);
 
